@@ -1,6 +1,6 @@
 import java.io.*;
 import java.net.*;
-
+import java.util.ArrayList;
 
 class Client{
 
@@ -14,29 +14,29 @@ class Client{
         
     }
 
-    public static void readMsg(DataInputStream din){
+    public static String readMsg(DataInputStream din){
+        String message = "";
         try{
-            din.readLine();
-
-            byte inMsg[] = new byte[1024];
-            din.read(inMsg);
-            for(int i = 0; i < inMsg.length; i ++){
-                System.out.print((char)inMsg[i]);
+            byte inBytes[] = new byte[din.available()];
+            din.read(inBytes);
+            for(int i = 0; i < inBytes.length; i ++){
+                System.out.print((char)inBytes[i]);
+                message += (char)inBytes[i];
             }
             System.out.println("");
+
         }catch(Exception e){
             e.printStackTrace();
         }
+        return message;
     }
 
     public static void performHandshake(DataInputStream din, DataOutputStream dout){
         sendMsg(dout, "HELO");
         readMsg(din);
-        sendMsg(dout, "AUTH username");
+        sendMsg(dout, "AUTH sam");
         readMsg(din);
     }
-
-
 
     public static void main(String args[]) throws Exception {
         Socket s = new Socket("localhost", 50000);
@@ -44,9 +44,17 @@ class Client{
         DataOutputStream dout = new DataOutputStream(s.getOutputStream());
 
         performHandshake(din, dout);
-
         sendMsg(dout, "REDY");
         readMsg(din);
+        sendMsg(dout, "GETS All");
+        readMsg(din);
+        sendMsg(dout, "OK");
+        readMsg(din);
+        sendMsg(dout, "OK");
+        readMsg(din);
+        
+
+        sendMsg(dout, "OK");
         sendMsg(dout, "QUIT");
         readMsg(din);
 
@@ -56,3 +64,4 @@ class Client{
     }
 
 }
+

@@ -67,7 +67,7 @@ class Client{
         catch (Exception e) {
             System.out.println(e);
         }
-        return servlist.get(7)[0].toString();
+        return servlist.get(servlist.size() - 1)[0].toString();
     }
 
     public static void performHandshake(DataInputStream din, DataOutputStream dout){

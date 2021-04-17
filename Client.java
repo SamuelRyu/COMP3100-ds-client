@@ -27,14 +27,14 @@ class Client{
             byte inBytes[] = new byte[din.available()];
             din.read(inBytes);
             for(int i = 0; i < inBytes.length; i ++){
-                System.out.print((char)inBytes[i]);
                 message += (char)inBytes[i];
             }
-            System.out.println("");
 
         }catch(Exception e){
+            
             e.printStackTrace();
         }
+        System.out.println("Server says: " + message);
         return message;
     }
 
@@ -90,10 +90,19 @@ class Client{
         sendMsg(dout, "OK");
         readMsg(din);
         sendMsg(dout, "OK");
-        readMsg(din);
-        
 
-        sendMsg(dout, "OK");
+        System.out.println("-----------");
+
+        sendMsg(dout, "SCHD 0 super-silk 0");
+        readMsg(din);
+
+        System.out.println("-----------");
+
+        sendMsg(dout, "REDY");
+        readMsg(din);
+
+        System.out.println("-----------");
+
         sendMsg(dout, "QUIT");
         readMsg(din);
 

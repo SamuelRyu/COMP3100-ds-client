@@ -16,7 +16,7 @@ public class XMLparser {
         // System.out.println("Server type " + servlist.get(0)[0]);
 
         try {
-            File inputFile = new File("ds-system.xml");
+            File inputFile = new File("./ds-system.xml");
 
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 

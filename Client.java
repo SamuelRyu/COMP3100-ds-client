@@ -13,6 +13,7 @@ class Client{
 
     public static void sendMsg(DataOutputStream dout, String msg){
         try{
+            msg += "\n";
             dout.write(msg.getBytes());
             dout.flush();
         }catch(Exception e){
@@ -34,6 +35,7 @@ class Client{
             
             e.printStackTrace();
         }
+        message += "\n";
         System.out.println("Server says: " + message);
         return message;
     }

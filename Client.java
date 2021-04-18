@@ -82,7 +82,7 @@ class Client {
     public static void performHandshake(DataInputStream din, DataOutputStream dout) {
         sendMsg(dout, "HELO");
         readMsg(din);
-        sendMsg(dout, "AUTH sam");
+        sendMsg(dout, "AUTH " + System.getProperty("user.name"));
         readMsg(din);
     }
 

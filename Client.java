@@ -13,8 +13,8 @@ class Client{
 
     public static void sendMsg(DataOutputStream dout, String msg){
         try{
-            msg += "\n";
             dout.write(msg.getBytes());
+            System.out.println("Sent: " + msg);
             dout.flush();
         }catch(Exception e){
             e.printStackTrace();
@@ -35,7 +35,6 @@ class Client{
             
             e.printStackTrace();
         }
-        message += "\n";
         System.out.println("Server says: " + message);
         return message;
     }
@@ -92,18 +91,19 @@ class Client{
         sendMsg(dout, "OK");
         readMsg(din);
         sendMsg(dout, "OK");
-
-        System.out.println("-----------");
-
-        sendMsg(dout, "SCHD 0 super-silk 0");
         readMsg(din);
-
-        System.out.println("-----------");
 
         sendMsg(dout, "REDY");
-        readMsg(din);
-
-        System.out.println("-----------");
+        String response = readMsg(din);
+        while(!response.contains("NONE")){
+            if(response.contains("JOBN")){
+                sendMsg(dout, "SCHD " + response.split("\\s+")[2] + " super-silk 0");
+                readMsg(din);  
+            }            
+            sendMsg(dout, "REDY");
+            response = readMsg(din);
+            System.out.println("--------------");
+        }
 
         sendMsg(dout, "QUIT");
         readMsg(din);

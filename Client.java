@@ -9,40 +9,39 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 
-class Client{
+class Client {
 
-    public static void sendMsg(DataOutputStream dout, String msg){
-        try{
+    static List<Object[]> servlist = new ArrayList<>();
+
+    public static void sendMsg(DataOutputStream dout, String msg) {
+        try {
             dout.write(msg.getBytes());
             System.out.println("Sent: " + msg);
             dout.flush();
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        
     }
 
-    public static String readMsg(DataInputStream din){
+    public static String readMsg(DataInputStream din) {
         String message = "";
-        try{
+        try {
             byte inBytes[] = new byte[din.available()];
             din.read(inBytes);
-            for(int i = 0; i < inBytes.length; i ++){
-                message += (char)inBytes[i];
+            for (int i = 0; i < inBytes.length; i++) {
+                message += (char) inBytes[i];
             }
 
-        }catch(Exception e){
-            
+        } catch (Exception e) {
+
             e.printStackTrace();
         }
         System.out.println("Server says: " + message);
         return message;
     }
 
-    public static String XMLFileParser() {
-
-        List<Object[]> servlist = new ArrayList<>();
-
+    // Reads XML file by traversing the file tree hierarchically
+    public static void retrieveXML() {
         try {
             File inputFile = new File("./ds-system.xml");
 
@@ -60,51 +59,27 @@ class Client{
 
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
                     Element tElement = (Element) node;
-                    servlist.add(new Object[] { tElement.getAttribute("type"), tElement.getAttribute("coreCount") });
+                    servlist.add(new Object[] { tElement.getAttribute("type"), tElement.getAttribute("coreCount"), tElement.getAttribute("limit") });
                 }
             }
         }
 
-
         catch (Exception e) {
             System.out.println(e);
         }
+    }
+
+    // Pull largest server name
+    public static String XMLFileParser() {
         return servlist.get(servlist.size() - 1)[0].toString();
     }
 
+    // Pull limit of largest server
     public static String XMLLimit() {
-
-        List<Object[]> servlist = new ArrayList<>();
-
-        try {
-            File inputFile = new File("./ds-system.xml");
-
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document doc = db.parse(inputFile);
-
-            doc.getDocumentElement().normalize();
-
-            NodeList servernodelist = doc.getElementsByTagName("server");
-
-            for (int i = 0; i < servernodelist.getLength(); i++) {
-                Node node = servernodelist.item(i);
-
-                if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    Element tElement = (Element) node;
-                    servlist.add(new Object[] { tElement.getAttribute("type"), tElement.getAttribute("limit") });
-                }
-            }
-        }
-
-        catch (Exception e) {
-            System.out.println(e);
-        }
-        return servlist.get(servlist.size() - 1)[1].toString();
+        return servlist.get(servlist.size() - 1)[2].toString();
     }
 
-    public static void performHandshake(DataInputStream din, DataOutputStream dout){
+    public static void performHandshake(DataInputStream din, DataOutputStream dout) {
         sendMsg(dout, "HELO");
         readMsg(din);
         sendMsg(dout, "AUTH sam");
@@ -116,9 +91,12 @@ class Client{
         DataInputStream din = new DataInputStream(s.getInputStream());
         DataOutputStream dout = new DataOutputStream(s.getOutputStream());
 
-        XMLFileParser();
+        // Pull ds-system.xml, grab type, coreCount and limit
+        retrieveXML();
 
+        // Start handshake
         performHandshake(din, dout);
+        // Sends REDY to server
         sendMsg(dout, "REDY");
         readMsg(din);
         sendMsg(dout, "GETS All");
@@ -128,32 +106,34 @@ class Client{
         sendMsg(dout, "OK");
         readMsg(din);
 
+        // Ready to start receiving jobs
         sendMsg(dout, "REDY");
         int count = 0;
         String response = readMsg(din);
-        while(!response.contains("NONE")){
-            if(response.contains("JOBN")){
+        while (!response.contains("NONE")) {
+            if (response.contains("JOBN")) {
                 sendMsg(dout, "SCHD " + response.split("\\s+")[2] + " " + XMLFileParser() + " " + count);
                 readMsg(din);
-                
-                if(readMsg(din).contains("ERR")){
-                   count++;
-                     if(count == Integer.parseInt(XMLLimit())){
-                        count = 0;
 
-                }
+                // Check for errors, if error found, send to the next server
+                if (readMsg(din).contains("ERR")) {
+                    count++;
+                    // Reset count to send to first server, otherwise will reach out of bounds and try to send to servers that dont exist
+                    if (count == Integer.parseInt(XMLLimit())) {
+                        count = 0;
+                    }
                     sendMsg(dout, "SCHD " + response.split("\\s+")[2] + XMLFileParser() + " " + count);
                     readMsg(din);
                 }
 
-            }            
+            }
+            // Ready for next job
             sendMsg(dout, "REDY");
             response = readMsg(din);
             System.out.println("--------------");
         }
 
-
-
+        // Quit
         sendMsg(dout, "QUIT");
         readMsg(din);
 
@@ -163,4 +143,3 @@ class Client{
     }
 
 }
-

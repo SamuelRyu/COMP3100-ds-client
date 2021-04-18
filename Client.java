@@ -65,10 +65,43 @@ class Client{
             }
         }
 
+
         catch (Exception e) {
             System.out.println(e);
         }
         return servlist.get(servlist.size() - 1)[0].toString();
+    }
+
+    public static String XMLLimit() {
+
+        List<Object[]> servlist = new ArrayList<>();
+
+        try {
+            File inputFile = new File("./ds-system.xml");
+
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document doc = db.parse(inputFile);
+
+            doc.getDocumentElement().normalize();
+
+            NodeList servernodelist = doc.getElementsByTagName("server");
+
+            for (int i = 0; i < servernodelist.getLength(); i++) {
+                Node node = servernodelist.item(i);
+
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    Element tElement = (Element) node;
+                    servlist.add(new Object[] { tElement.getAttribute("type"), tElement.getAttribute("limit") });
+                }
+            }
+        }
+
+        catch (Exception e) {
+            System.out.println(e);
+        }
+        return servlist.get(servlist.size() - 1)[1].toString();
     }
 
     public static void performHandshake(DataInputStream din, DataOutputStream dout){
@@ -83,6 +116,8 @@ class Client{
         DataInputStream din = new DataInputStream(s.getInputStream());
         DataOutputStream dout = new DataOutputStream(s.getOutputStream());
 
+        XMLFileParser();
+
         performHandshake(din, dout);
         sendMsg(dout, "REDY");
         readMsg(din);
@@ -94,16 +129,30 @@ class Client{
         readMsg(din);
 
         sendMsg(dout, "REDY");
+        int count = 0;
         String response = readMsg(din);
         while(!response.contains("NONE")){
             if(response.contains("JOBN")){
-                sendMsg(dout, "SCHD " + response.split("\\s+")[2] + " super-silk 0");
-                readMsg(din);  
+                sendMsg(dout, "SCHD " + response.split("\\s+")[2] + " " + XMLFileParser() + " " + count);
+                readMsg(din);
+                
+                if(readMsg(din).contains("ERR")){
+                   count++;
+                     if(count == Integer.parseInt(XMLLimit())){
+                        count = 0;
+
+                }
+                    sendMsg(dout, "SCHD " + response.split("\\s+")[2] + XMLFileParser() + " " + count);
+                    readMsg(din);
+                }
+
             }            
             sendMsg(dout, "REDY");
             response = readMsg(din);
             System.out.println("--------------");
         }
+
+
 
         sendMsg(dout, "QUIT");
         readMsg(din);
